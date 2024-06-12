@@ -20,7 +20,7 @@ app.get("/", function (req, res) {
 
 
 // Date Endpoint
-app.get("/api/:date", (req, res) => {
+app.get("/api/:date?", (req, res) => {
 
   // If input is a date string
   if (!isNaN(new Date(req.params.date).getTime())) {
@@ -40,10 +40,19 @@ app.get("/api/:date", (req, res) => {
     });
   }
 
+  // If there is no input
+  else if (req.params.date == null) {
+    date = new Date();
+    res.json({
+      "unix": date.getTime(),
+      "utc": date.toUTCString()
+    });
+  }
+
   // Invalid input
   else {
     res.json({
-      "error": "Invaid Date"
+      "error": "Invalid Date"
     });
   }
   
