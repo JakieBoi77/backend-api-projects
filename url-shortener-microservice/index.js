@@ -2,7 +2,6 @@ require('dotenv').config();
 const express = require('express');
 const bodyParser = require('body-parser');
 const mongoose = require('mongoose');
-const dns = require('dns');
 const cors = require('cors');
 const app = express();
 
@@ -44,26 +43,31 @@ app.post("/api/shorturl", async (req, res) => {
     // Create a URL from the Request Body
     const url = new URL(req.body.url);
 
-    // Query the database for the URL
-    let record = await ShortURL.findOne({ url: url.href });
+    // Protocol must be HTTP or HTTPS
+    if (url.protocol === "http:" || url.protocol === "https:") {
+      // Query the database for the URL
+      let record = await ShortURL.findOne({ url: url.href });
 
-    // If the record does not exist
-    if (!record) {
-      // Add URL to Database
-      const shortURL = new ShortURL({ url: url.href });
-      await shortURL.save();
-      console.log("Sucessfully saved to database: " + url.href);
-      // Update the record
-      record = await ShortURL.findOne({ url: url.href });
+      // If the record does not exist
+      if (!record) {
+        // Add URL to Database
+        const shortURL = new ShortURL({ url: url.href });
+        await shortURL.save();
+        console.log("Sucessfully saved to database: " + url.href);
+        // Update the record
+        record = await ShortURL.findOne({ url: url.href });
+      } else {
+        console.log("URL already in database: " + url.href);
+      }
+      
+      // Send back the short URL data
+      res.json({ "original_url": record.url, "short_url": record._id });
     } else {
-      console.log("URL already in database: " + url.href);
+      throw new Error("Invalid Protocol");
     }
-    
-    // Send back the short URL data
-    res.json({ "original_url": record.url, "short_url": record._id });
 
   } catch (err) {
-    console.error(err);
+    console.log("Invalid URL: " + req.body.url);
     res.json({ "error": "invalid url" });
   }
 });
